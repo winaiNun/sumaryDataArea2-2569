@@ -659,31 +659,38 @@ function legendLabel(sheetIdx: number, cat: 'done' | 'mid' | 'none') {
 // ── School List Modal ──
 const sl = reactive({ open: false, sheetIdx: 0, cat: 'done' as 'done' | 'mid' | 'none', title: '' })
 
-function schoolCat(sc: School, si: number): 'done' | 'mid' | 'none' {
+function schoolStats(sc: School, si: number) {
   const groups = (sc.g[si] || []) as [number, number, number][]
   let td = 0, tm = 0, tn = 0
   for (const [d, m, n] of groups) { td += d; tm += m; tn += n }
-  const tot = td + tm + tn
-  if (tot === 0) return 'none'
-  if (td > tm && td > tn) return 'done'
-  if (tn > td && tn > tm) return 'none'
-  if (tm >= td || tm >= tn) return 'mid'
-  return td >= tn ? 'done' : 'none'
+  return { td, tm, tn, tot: td + tm + tn }
+}
+
+function schoolCat(sc: School, si: number): 'done' | 'mid' | 'none' {
+  const { td, tm, tn, tot } = schoolStats(sc, si)
+  if (tot === 0 || tn > 0) return 'none'
+  if (tm > 0) return 'mid'
+  return 'done'
 }
 
 function schoolDonePct(sc: School, si: number): number {
-  const groups = (sc.g[si] || []) as [number, number, number][]
-  let td = 0, tot = 0
-  for (const [d, m, n] of groups) { td += d; tot += d + m + n }
+  const { td, tot } = schoolStats(sc, si)
   return tot ? Math.round(td / tot * 100) : 0
 }
 
 const slSchools = computed(() =>
   filteredSchools.value
-    .filter(sc => schoolCat(sc, sl.sheetIdx) === sl.cat)
+    .filter(sc => {
+      const { td, tm, tn, tot } = schoolStats(sc, sl.sheetIdx)
+      if (sl.cat === 'done') return tot > 0 && tn === 0 && tm === 0
+      if (sl.cat === 'mid') return tm > 0
+      return tot === 0 || tn > 0
+    })
     .sort((a, b) => {
-      if (sl.cat === 'done') return schoolDonePct(b, sl.sheetIdx) - schoolDonePct(a, sl.sheetIdx)
-      if (sl.cat === 'none') return schoolDonePct(a, sl.sheetIdx) - schoolDonePct(b, sl.sheetIdx)
+      const as = schoolStats(a, sl.sheetIdx)
+      const bs = schoolStats(b, sl.sheetIdx)
+      if (sl.cat === 'none') return bs.tn - as.tn
+      if (sl.cat === 'mid') return bs.tm - as.tm
       return a.name.localeCompare(b.name, 'th')
     })
 )
