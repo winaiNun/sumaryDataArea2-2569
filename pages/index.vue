@@ -146,9 +146,9 @@
           <!-- Group breakdown -->
           <div class="groups-section">
             <div class="groups-legend-mini">
-              <span><i class="dot-mini done"></i>เสร็จ</span>
-              <span><i class="dot-mini mid"></i>ระหว่าง</span>
-              <span><i class="dot-mini none"></i>ยังไม่</span>
+              <span><i class="dot-mini done"></i>{{ legendLabel(i, 'done') }} <b>{{ s.donePct }}%</b></span>
+              <span v-if="s.midPct > 0"><i class="dot-mini mid"></i>{{ legendLabel(i, 'mid') }} <b>{{ s.midPct }}%</b></span>
+              <span><i class="dot-mini none"></i>{{ legendLabel(i, 'none') }} <b>{{ s.nonePct }}%</b></span>
             </div>
             <div class="groups-list">
               <div
@@ -162,9 +162,9 @@
               >
                 <span class="grow-label">{{ g.label }}</span>
                 <div class="stacked">
-                  <div class="seg sdone" :style="{ width: g.donePct + '%' }" :title="`เสร็จ ${g.donePct}%`"></div>
-                  <div class="seg smid"  :style="{ width: g.midPct  + '%' }" :title="`ระหว่าง ${g.midPct}%`"></div>
-                  <div class="seg snone" :style="{ width: g.nonePct + '%' }"></div>
+                  <div class="seg sdone" :style="{ width: g.donePct + '%' }" :title="`${legendLabel(i, 'done')} ${g.donePct}%`"></div>
+                  <div class="seg smid"  :style="{ width: g.midPct  + '%' }" :title="`${legendLabel(i, 'mid')} ${g.midPct}%`"></div>
+                  <div class="seg snone" :style="{ width: g.nonePct + '%' }" :title="`${legendLabel(i, 'none')} ${g.nonePct}%`"></div>
                 </div>
                 <span class="grow-pct">{{ g.donePct }}%</span>
               </div>
@@ -616,6 +616,16 @@ async function openEvidence(si: number, gi: number | null) {
 
 function statusLabel(cat: string) {
   return cat === 'done' ? 'เสร็จ' : cat === 'mid' ? 'ระหว่าง' : 'ยังไม่'
+}
+
+const LEGEND_LABELS: Record<number, { done: string; mid: string; none: string }> = {
+  0: { done: 'ดำเนินการแล้ว', mid: 'อยู่ระหว่างดำเนินการ', none: 'ยังไม่ดำเนินการ' },
+  1: { done: 'มี', mid: 'อยู่ระหว่าง', none: 'ไม่มี' },
+  2: { done: 'ระดับดีมาก (4–5)', mid: 'ระดับดี (3)', none: 'ต้องปรับปรุง (1–2)' },
+  3: { done: 'ดำเนินการแล้ว', mid: 'อยู่ระหว่างดำเนินการ', none: 'ยังไม่ดำเนินการ' }
+}
+function legendLabel(sheetIdx: number, cat: 'done' | 'mid' | 'none') {
+  return (LEGEND_LABELS[sheetIdx] ?? LEGEND_LABELS[0])[cat]
 }
 
 // ── Edit modal ──

@@ -224,10 +224,11 @@ small  { font-weight: 400; font-size: .8em; }
 }
 
 .groups-legend-mini {
-  display: flex; gap: 10px; font-size: .72rem; color: var(--sub);
+  display: flex; flex-wrap: wrap; gap: 6px 14px; font-size: .72rem; color: var(--sub);
   margin-bottom: 4px; padding-bottom: 6px; border-bottom: 1px solid var(--bdr);
 }
-.groups-legend-mini span { display: flex; align-items: center; gap: 4px; }
+.groups-legend-mini span { display: flex; align-items: center; gap: 4px; white-space: nowrap; }
+.groups-legend-mini b { color: var(--txt); font-weight: 600; }
 .dot-mini {
   display: inline-block; width: 8px; height: 8px;
   border-radius: 2px; flex-shrink: 0;
