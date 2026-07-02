@@ -38,7 +38,7 @@ const PARSERS: Parser[] = [
         return 0
       })
     },
-    groupLabel: k => `กลุ่ม ${k}`,
+    groupLabel: k => ({ '2.1': 'การอ่าน การเขียน', '2.2': 'คิดเลขเป็น', '2.3.1': 'การดำเนินงานผู้สอน', '2.3.2': 'คุณลักษณะฯ' } as Record<string,string>)[k] ?? `กลุ่ม ${k}`,
     colsForGroup: (cols, k) => {
       const suffix = k.split('.').length === 3 ? '(ระดับคะแนน 1-4)' : '(ผลการจัด)'
       return cols.filter(c => c.startsWith(k + ' ข้อ') && c.endsWith(suffix))

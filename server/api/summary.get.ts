@@ -72,7 +72,7 @@ function getSheet2Groups(rows: any[]): Group[] {
   const cols = Object.keys(rows[0] ?? {}).filter(c => /^\d+\.\d+\s+ข้อ/.test(c) && c.endsWith('(ผลการจัด)'))
   const map = groupBy(cols, c => { const m = c.match(/^(\d+\.\d+)/); return m ? m[1] : null })
   return Array.from(map.entries()).sort().map(([key, cs]) => ({
-    label: `กลุ่ม ${key}`,
+    label: ({ '2.1': 'การอ่าน การเขียน', '2.2': 'คิดเลขเป็น', '2.3.1': 'การดำเนินงานผู้สอน', '2.3.2': 'คุณลักษณะฯ' } as Record<string,string>)[key] ?? `กลุ่ม ${key}`,
     ...calcBinary(rows, cs)
   }))
 }
