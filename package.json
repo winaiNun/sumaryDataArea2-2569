@@ -10,5 +10,9 @@
   "dependencies": {
     "nuxt": "^3.13.3",
     "xlsx": "^0.18.3"
+  },
+  "devDependencies": {
+    "@vite-pwa/assets-generator": "^1.0.2",
+    "@vite-pwa/nuxt": "^1.1.1"
   }
 }

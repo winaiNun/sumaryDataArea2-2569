@@ -278,8 +278,8 @@ small  { font-weight: 400; font-size: .8em; }
 
 .grow-pct { font-size: .78rem; font-weight: 700; text-align: right; }
 
-/* Print watermark (hidden on screen) */
-.print-meta { display: none; }
+/* Print elements (hidden on screen) */
+.print-meta, .print-header { display: none; }
 
 /* ── Evidence panel ── */
 .ev-overlay {
@@ -419,7 +419,11 @@ td input:focus { outline: 2px solid var(--a0); outline-offset: 1px; }
    PRINT STYLES  — อินโฟกราฟิก
    ════════════════════════════════ */
 @media print {
-  @page { size: A4 landscape; margin: 16mm 18mm; }
+  @page { size: A4 landscape; margin: 10mm 14mm; }
+
+  /* ── Reset height that causes blank first page ── */
+  html, body { min-height: 0 !important; height: auto !important; }
+  .page { min-height: 0 !important; padding: 0 !important; }
 
   body { background: #fff !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
 
@@ -460,18 +464,44 @@ td input:focus { outline: 2px solid var(--a0); outline-offset: 1px; }
   .grow-label { font-size: .82rem !important; }
   .grow-pct   { font-size: .82rem !important; }
 
+  /* Print header (shown above card) */
+  .print-header {
+    display: block !important;
+    padding: 8px 16px 10px;
+    border-bottom: 2px solid #1e40af;
+    margin-bottom: 6px;
+  }
+  .print-header-title {
+    font-size: .95rem; font-weight: 700; color: #1e3a8a;
+  }
+  .print-header-sub {
+    font-size: .78rem; color: #475569; margin-top: 1px;
+  }
+  .print-filter-row {
+    display: flex; gap: 8px; align-items: center; margin-top: 5px;
+    font-size: .75rem; flex-wrap: wrap;
+  }
+  .print-filter-label { color: #64748b; font-weight: 600; }
+  .print-filter-val {
+    background: #eff6ff; color: #1d4ed8;
+    border: 1px solid #bfdbfe; border-radius: 4px;
+    padding: 1px 7px; font-weight: 500;
+  }
+  .print-filter-count { color: #475569; margin-left: 4px; }
+
   /* Print meta footer */
   .print-meta {
     display: flex !important;
     justify-content: space-between;
-    font-size: .72rem; color: #64748b;
+    font-size: .68rem; color: #64748b;
     border-top: 1px solid #e2e8f0;
-    padding: 8px 16px;
+    padding: 6px 16px;
     background: #f8fafc;
+    margin-top: auto;
   }
 
   /* Hide evidence panel and topbar */
-  .ev-overlay, .topbar, .filter-bar, .overview-strip { display: none !important; }
+  .ev-overlay, .topbar, .filter-bar, .overview-strip, .site-footer { display: none !important; }
 }
 
 /* ── Upload screen ── */

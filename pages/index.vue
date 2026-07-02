@@ -173,11 +173,26 @@
 
         </div><!-- /crit-body -->
 
-        <!-- Print watermark (visible only in print) -->
+        <!-- Print header (visible only in print) -->
+        <div class="print-header">
+          <div class="print-header-title">Dashboard สรุปผลการนิเทศ ติดตาม การเปิดภาคเรียนที่ 1 ปีการศึกษา 2569</div>
+          <div class="print-header-sub">สำนักงานเขตพื้นที่การศึกษาประถมศึกษานครราชสีมา เขต 2</div>
+          <div class="print-filter-row">
+            <span class="print-filter-label">ขอบเขตข้อมูล:</span>
+            <span v-if="isAll" class="print-filter-val">ทุกโรงเรียนในสังกัด</span>
+            <template v-else>
+              <span v-if="filter.district" class="print-filter-val">อำเภอ {{ filter.district }}</span>
+              <span v-if="filter.network" class="print-filter-val">ศูนย์เครือข่าย {{ filter.network }}</span>
+              <span v-if="filter.school" class="print-filter-val">โรงเรียน {{ availableSchools.find(sc => sc.code === filter.school)?.name || filter.school }}</span>
+            </template>
+            <span class="print-filter-count">{{ filteredSchools.length }} โรงเรียน</span>
+          </div>
+        </div>
+
+        <!-- Print footer -->
         <div class="print-meta">
-          <span>สพป.นครราชสีมา เขต 3</span>
-          <span v-if="!isAll">อำเภอ: {{ filter.district || 'ทั้งหมด' }} · ศูนย์: {{ filter.network || 'ทั้งหมด' }}</span>
-          <span>สพป.นครราชสีมา เขต 2 · {{ filteredSchools.length }} โรงเรียน · พิมพ์ {{ now }}</span>
+          <span>กลุ่มนิเทศ ติดตามและประเมินผลการจัดการศึกษา สพป.นครราชสีมา เขต 2</span>
+          <span>พิมพ์วันที่ {{ now }}</span>
         </div>
       </div><!-- /crit-card -->
     </div>
