@@ -229,6 +229,20 @@ small  { font-weight: 400; font-size: .8em; }
 }
 .groups-legend-mini span { display: flex; align-items: center; gap: 4px; white-space: nowrap; }
 .groups-legend-mini b { color: var(--txt); font-weight: 600; }
+.legend-clickable { cursor: pointer; border-radius: 4px; padding: 2px 5px; transition: background .15s; }
+.legend-clickable:hover { background: rgba(0,0,0,.07); }
+
+/* ── School List Modal ── */
+.sl-modal { background: #fff; border-radius: 16px; width: min(560px, 95vw); max-height: 80vh; display: flex; flex-direction: column; overflow: hidden; box-shadow: 0 8px 40px rgba(0,0,0,.18); }
+.sl-header { display: flex; align-items: flex-start; justify-content: space-between; padding: 1.1rem 1.4rem; border-bottom: 1px solid var(--bdr); }
+.sl-title { font-size: 1rem; font-weight: 700; color: var(--txt); margin: 0; }
+.sl-sub { font-size: .78rem; color: var(--sub); margin: 2px 0 0; }
+.sl-body { flex: 1; overflow-y: auto; padding: .7rem 1rem; display: flex; flex-direction: column; gap: 5px; }
+.sl-row { display: flex; align-items: center; gap: 10px; padding: .55rem .8rem; border-radius: 8px; background: var(--bg); border: 1px solid var(--bdr); }
+.sl-info { flex: 1; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; min-width: 0; }
+.sl-name { font-size: .86rem; font-weight: 600; color: var(--txt); }
+.btn-edit-sm { font-size: .78rem; padding: .3rem .7rem; background: var(--pri); color: #fff; border: none; border-radius: 6px; cursor: pointer; white-space: nowrap; flex-shrink: 0; }
+.btn-edit-sm:hover { opacity: .85; }
 .dot-mini {
   display: inline-block; width: 8px; height: 8px;
   border-radius: 2px; flex-shrink: 0;

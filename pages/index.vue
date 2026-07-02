@@ -146,9 +146,9 @@
           <!-- Group breakdown -->
           <div class="groups-section">
             <div class="groups-legend-mini">
-              <span><i class="dot-mini done"></i>{{ legendLabel(i, 'done') }} <b>{{ s.donePct }}%</b></span>
-              <span v-if="s.midPct > 0"><i class="dot-mini mid"></i>{{ legendLabel(i, 'mid') }} <b>{{ s.midPct }}%</b></span>
-              <span><i class="dot-mini none"></i>{{ legendLabel(i, 'none') }} <b>{{ s.nonePct }}%</b></span>
+              <span class="legend-clickable" role="button" @click="openSchoolList(i, 'done')"><i class="dot-mini done"></i>{{ legendLabel(i, 'done') }} <b>{{ s.donePct }}%</b></span>
+              <span v-if="s.midPct > 0" class="legend-clickable" role="button" @click="openSchoolList(i, 'mid')"><i class="dot-mini mid"></i>{{ legendLabel(i, 'mid') }} <b>{{ s.midPct }}%</b></span>
+              <span class="legend-clickable" role="button" @click="openSchoolList(i, 'none')"><i class="dot-mini none"></i>{{ legendLabel(i, 'none') }} <b>{{ s.nonePct }}%</b></span>
             </div>
             <div class="groups-list">
               <div
@@ -394,6 +394,33 @@
       </Transition>
     </Teleport>
 
+    <!-- ── SCHOOL LIST MODAL ── -->
+    <Teleport to="body">
+      <Transition name="overlay-fade">
+        <div v-if="sl.open" class="ev-overlay" @click.self="sl.open = false">
+          <div class="sl-modal">
+            <div class="sl-header">
+              <div>
+                <h3 class="sl-title">{{ sl.title }}</h3>
+                <p class="sl-sub">{{ slSchools.length }} โรงเรียน</p>
+              </div>
+              <button class="ev-close" @click="sl.open = false">✕</button>
+            </div>
+            <div v-if="!slSchools.length" class="ev-empty" style="margin:2rem 1.5rem">ไม่พบโรงเรียนในกลุ่มนี้</div>
+            <div v-else class="sl-body">
+              <div v-for="sc in slSchools" :key="sc.code" class="sl-row">
+                <div class="sl-info">
+                  <span class="sl-name">{{ sc.name }}</span>
+                  <span class="ev-chip district">{{ sc.district }}</span>
+                </div>
+                <button class="btn-edit-sm" @click="sl.open = false; requestEdit(sc.code)">✏️ แก้ไข</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </Transition>
+    </Teleport>
+
     <!-- ── PIN MODAL ── -->
     <Teleport to="body">
       <Transition name="overlay-fade">
@@ -626,6 +653,24 @@ const LEGEND_LABELS: Record<number, { done: string; mid: string; none: string }>
 }
 function legendLabel(sheetIdx: number, cat: 'done' | 'mid' | 'none') {
   return (LEGEND_LABELS[sheetIdx] ?? LEGEND_LABELS[0])[cat]
+}
+
+// ── School List Modal ──
+const sl = reactive({ open: false, sheetIdx: 0, cat: 'done' as 'done' | 'mid' | 'none', title: '' })
+const slSchools = computed(() => {
+  return filteredSchools.value.filter(sc => {
+    const os = sc.os[sl.sheetIdx] || ''
+    if (sl.cat === 'done') return os === 'เสร็จสมบูรณ์'
+    if (sl.cat === 'none') return os === '' || os === 'ยังไม่เริ่มประเมิน'
+    return os !== 'เสร็จสมบูรณ์' && os !== '' && os !== 'ยังไม่เริ่มประเมิน'
+  }).sort((a, b) => a.name.localeCompare(b.name, 'th'))
+})
+function openSchoolList(sheetIdx: number, cat: 'done' | 'mid' | 'none') {
+  const sheetName = (data.value?.sheetNames[sheetIdx] || '').replace(/^\d+\.\s*/, '')
+  sl.sheetIdx = sheetIdx
+  sl.cat = cat
+  sl.title = `${legendLabel(sheetIdx, cat)} — ${sheetName}`
+  sl.open = true
 }
 
 // ── Edit modal ──
