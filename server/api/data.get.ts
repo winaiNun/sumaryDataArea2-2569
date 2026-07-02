@@ -19,7 +19,7 @@ const PARSERS: Parser[] = [
     sheetKey: '1. ความพร้อมเปิดเรียน', name: 'ความพร้อมเปิดเรียน',
     getGroupKeys: cols => [...new Set(cols.filter(c => c.endsWith('(สถานะ)') && /^ข้อ\s*\d+/.test(c))
       .map(c => c.match(/^ข้อ\s*(\d+)/)?.[1]).filter(Boolean) as string[])].sort((a, b) => +a - +b),
-    groupLabel: k => `ข้อ ${k}`,
+    groupLabel: k => ({ '1': 'งานวิชาการ', '2': 'งานงบประมาณ', '3': 'งานบริหารงานบุคคล', '4': 'งานบริหารทั่วไป' } as Record<string,string>)[k] ?? `ข้อ ${k}`,
     colsForGroup: (cols, k) => cols.filter(c => c.endsWith('(สถานะ)') && new RegExp(`^ข้อ\\s*${k}\\.`).test(c)),
     classify: v => v === 'ดำเนินการแล้ว' ? 'done' : v === 'อยู่ระหว่างดำเนินการ' ? 'mid' : 'none'
   },

@@ -63,7 +63,7 @@ function getSheet1Groups(rows: any[]): Group[] {
   const cols = Object.keys(rows[0] ?? {}).filter(c => c.endsWith('(สถานะ)') && /^ข้อ\s*\d+/.test(c))
   const map = groupBy(cols, c => { const m = c.match(/^ข้อ\s*(\d+)/); return m ? parseInt(m[1]) : null })
   return Array.from(map.entries()).sort(([a], [b]) => a - b).map(([n, cs]) => ({
-    label: `ข้อ ${n}`,
+    label: ({ 1: 'งานวิชาการ', 2: 'งานงบประมาณ', 3: 'งานบริหารงานบุคคล', 4: 'งานบริหารทั่วไป' } as Record<number,string>)[n] ?? `ข้อ ${n}`,
     ...calcStatus3(rows, cs)
   }))
 }
