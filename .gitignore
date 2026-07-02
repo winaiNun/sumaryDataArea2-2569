@@ -1,0 +1,31 @@
+# Nuxt / Nitro build
+.nuxt/
+.output/
+dist/
+
+# Node modules
+node_modules/
+
+# Vercel
+.vercel/
+
+# Logs
+*.log
+npm-debug.log*
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Editor
+.vscode/settings.json
+*.swp
+
+# Excel data files — uploaded via UI, not committed
+*.xlsx
+*.xls
+
+# Env files with secrets
+.env
+.env.*
+!.env.example
