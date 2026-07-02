@@ -412,6 +412,7 @@
                 <div class="sl-info">
                   <span class="sl-name">{{ sc.name }}</span>
                   <span class="ev-chip district">{{ sc.district }}</span>
+                  <span class="sl-pct" :class="`sl-pct-${schoolCat(sc, sl.sheetIdx)}`">{{ schoolDonePct(sc, sl.sheetIdx) }}%</span>
                 </div>
                 <button class="btn-edit-sm" @click="sl.open = false; requestEdit(sc.code)">✏️ แก้ไข</button>
               </div>
@@ -657,14 +658,36 @@ function legendLabel(sheetIdx: number, cat: 'done' | 'mid' | 'none') {
 
 // ── School List Modal ──
 const sl = reactive({ open: false, sheetIdx: 0, cat: 'done' as 'done' | 'mid' | 'none', title: '' })
-const slSchools = computed(() => {
-  return filteredSchools.value.filter(sc => {
-    const os = sc.os[sl.sheetIdx] || ''
-    if (sl.cat === 'done') return os === 'เสร็จสมบูรณ์'
-    if (sl.cat === 'none') return os === '' || os === 'ยังไม่เริ่มประเมิน'
-    return os !== 'เสร็จสมบูรณ์' && os !== '' && os !== 'ยังไม่เริ่มประเมิน'
-  }).sort((a, b) => a.name.localeCompare(b.name, 'th'))
-})
+
+function schoolCat(sc: School, si: number): 'done' | 'mid' | 'none' {
+  const groups = (sc.g[si] || []) as [number, number, number][]
+  let td = 0, tm = 0, tn = 0
+  for (const [d, m, n] of groups) { td += d; tm += m; tn += n }
+  const tot = td + tm + tn
+  if (tot === 0) return 'none'
+  if (td > tm && td > tn) return 'done'
+  if (tn > td && tn > tm) return 'none'
+  if (tm >= td || tm >= tn) return 'mid'
+  return td >= tn ? 'done' : 'none'
+}
+
+function schoolDonePct(sc: School, si: number): number {
+  const groups = (sc.g[si] || []) as [number, number, number][]
+  let td = 0, tot = 0
+  for (const [d, m, n] of groups) { td += d; tot += d + m + n }
+  return tot ? Math.round(td / tot * 100) : 0
+}
+
+const slSchools = computed(() =>
+  filteredSchools.value
+    .filter(sc => schoolCat(sc, sl.sheetIdx) === sl.cat)
+    .sort((a, b) => {
+      if (sl.cat === 'done') return schoolDonePct(b, sl.sheetIdx) - schoolDonePct(a, sl.sheetIdx)
+      if (sl.cat === 'none') return schoolDonePct(a, sl.sheetIdx) - schoolDonePct(b, sl.sheetIdx)
+      return a.name.localeCompare(b.name, 'th')
+    })
+)
+
 function openSchoolList(sheetIdx: number, cat: 'done' | 'mid' | 'none') {
   const sheetName = (data.value?.sheetNames[sheetIdx] || '').replace(/^\d+\.\s*/, '')
   sl.sheetIdx = sheetIdx

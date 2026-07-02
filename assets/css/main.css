@@ -243,6 +243,10 @@ small  { font-weight: 400; font-size: .8em; }
 .sl-name { font-size: .86rem; font-weight: 600; color: var(--txt); }
 .btn-edit-sm { font-size: .78rem; padding: .3rem .7rem; background: var(--pri); color: #fff; border: none; border-radius: 6px; cursor: pointer; white-space: nowrap; flex-shrink: 0; }
 .btn-edit-sm:hover { opacity: .85; }
+.sl-pct { font-size: .75rem; font-weight: 700; padding: 1px 6px; border-radius: 10px; }
+.sl-pct-done { background: #d4f0d4; color: #1a7a1a; }
+.sl-pct-mid  { background: #fff0cc; color: #8a6000; }
+.sl-pct-none { background: #fde8e8; color: #b00; }
 .dot-mini {
   display: inline-block; width: 8px; height: 8px;
   border-radius: 2px; flex-shrink: 0;
