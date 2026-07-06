@@ -120,7 +120,7 @@
                 :stroke-dasharray="`${s.midPct} 100`" :stroke-dashoffset="`${-s.donePct}`"
                 transform="rotate(-90 18 18)"
               />
-              <text x="18" y="16.5" text-anchor="middle" class="donut-big">{{ s.donePct }}</text>
+              <text x="18" y="16.5" text-anchor="middle" class="donut-big">{{ s.donePct.toFixed(1) }}</text>
               <text x="18" y="22" text-anchor="middle" class="donut-small">%</text>
             </svg>
 
@@ -146,9 +146,9 @@
           <!-- Group breakdown -->
           <div class="groups-section">
             <div class="groups-legend-mini">
-              <span class="legend-clickable" role="button" @click="openSchoolList(i, 'done')"><i class="dot-mini done"></i>{{ legendLabel(i, 'done') }} <b>{{ s.donePct }}%</b></span>
-              <span v-if="s.midPct > 0" class="legend-clickable" role="button" @click="openSchoolList(i, 'mid')"><i class="dot-mini mid"></i>{{ legendLabel(i, 'mid') }} <b>{{ s.midPct }}%</b></span>
-              <span class="legend-clickable" role="button" @click="openSchoolList(i, 'none')"><i class="dot-mini none"></i>{{ legendLabel(i, 'none') }} <b>{{ s.nonePct }}%</b></span>
+              <span class="legend-clickable" role="button" @click="openSchoolList(i, 'done')"><i class="dot-mini done"></i>{{ legendLabel(i, 'done') }} <b>{{ s.donePct.toFixed(2) }}%</b></span>
+              <span v-if="s.midPct > 0" class="legend-clickable" role="button" @click="openSchoolList(i, 'mid')"><i class="dot-mini mid"></i>{{ legendLabel(i, 'mid') }} <b>{{ s.midPct.toFixed(2) }}%</b></span>
+              <span class="legend-clickable" role="button" @click="openSchoolList(i, 'none')"><i class="dot-mini none"></i>{{ legendLabel(i, 'none') }} <b>{{ s.nonePct.toFixed(2) }}%</b></span>
             </div>
             <div class="groups-list">
               <div
@@ -166,7 +166,10 @@
                   <div class="seg smid"  :style="{ width: g.midPct  + '%' }" :title="`${legendLabel(i, 'mid')} ${g.midPct}%`"></div>
                   <div class="seg snone" :style="{ width: g.nonePct + '%' }" :title="`${legendLabel(i, 'none')} ${g.nonePct}%`"></div>
                 </div>
-                <span class="grow-pct">{{ g.donePct }}%</span>
+                <div class="grow-right">
+                  <span class="grow-pct">{{ g.donePct.toFixed(2) }}%</span>
+                  <span v-if="g.mean !== null" class="grow-mean">เฉลี่ย {{ g.mean.toFixed(2) }} <em>{{ qualityLabel(g.mean, g.scale) }}</em></span>
+                </div>
               </div>
             </div>
           </div>
@@ -213,7 +216,10 @@
                 <h3 class="ev-title">หลักฐาน · {{ ev.sheetName }}</h3>
                 <p class="ev-sub" v-if="ev.groupLabel">{{ ev.groupLabel }}</p>
               </div>
-              <button class="ev-close" @click="ev.open = false">✕</button>
+              <div class="ev-head-actions">
+                <button v-if="!ev.loading && ev.agg.length" class="btn-export" @click="exportExcel" title="ส่งออก Excel">📊 Excel</button>
+                <button class="ev-close" @click="ev.open = false">✕</button>
+              </div>
             </div>
 
             <div v-if="ev.loading" class="ev-loading">
@@ -223,6 +229,25 @@
             <div v-else-if="!ev.rows.length" class="ev-empty">ไม่พบข้อมูลหลักฐาน</div>
 
             <div v-else class="ev-body">
+              <!-- Aggregate summary per item -->
+              <div v-if="ev.agg.length" class="ev-agg">
+                <div class="ev-agg-title">สรุปรายข้อ ({{ ev.agg.length }} ข้อ · {{ ev.rows.length }} โรงเรียน)</div>
+                <div v-for="a in ev.agg" :key="a.col" class="ev-agg-row">
+                  <div class="ev-agg-label">{{ a.label }}</div>
+                  <div class="ev-agg-stats">
+                    <div class="ev-agg-bar-wrap">
+                      <div class="stacked ev-agg-bar">
+                        <div class="seg sdone" :style="{ width: a.donePct + '%' }"></div>
+                        <div class="seg smid"  :style="{ width: a.midPct + '%' }"></div>
+                        <div class="seg snone" :style="{ width: Math.max(0, 100 - a.donePct - a.midPct).toFixed(2) + '%' }"></div>
+                      </div>
+                    </div>
+                    <span class="ev-agg-pct">{{ a.donePct.toFixed(2) }}%</span>
+                    <span v-if="a.mean !== null" class="ev-agg-mean">{{ a.mean.toFixed(2) }} <em>{{ a.qualityLabel }}</em></span>
+                  </div>
+                </div>
+              </div>
+
               <div class="ev-count">พบ {{ ev.rows.length }} โรงเรียน</div>
               <div v-for="row in ev.rows" :key="row.code" class="ev-school">
                 <div class="ev-school-head">
@@ -466,11 +491,14 @@
 
 <script setup lang="ts">
 type Stat = [number, number, number]
-type School = { code: string; name: string; district: string; network: string; os: string[]; g: Stat[][] }
+type Mean = [number, number]  // [sum, count]
+type AggItem = { label: string; col: string; scale: number; total: number; done: number; mid: number; none: number; donePct: number; midPct: number; mean: number | null; qualityLabel: string }
+type School = { code: string; name: string; district: string; network: string; os: string[]; g: Stat[][]; means: Mean[][] }
 type DataRes = {
   sheetNames: string[]
   groupLabels: string[][]
   groupKeys: string[][]
+  groupScales: number[][]
   districts: string[]
   networks: string[]
   schools: School[]
@@ -604,7 +632,7 @@ const summaries = computed(() => {
     const schools = filteredSchools.value
     let td = 0, tm = 0, tn = 0, completed = 0, inProgress = 0, notStarted = 0
     const numG = data.value!.groupLabels[si]?.length || 0
-    const gAgg = Array.from({ length: numG }, () => ({ d: 0, m: 0, n: 0 }))
+    const gAgg = Array.from({ length: numG }, () => ({ d: 0, m: 0, n: 0, sum: 0, cnt: 0 }))
 
     for (const sc of schools) {
       const os = sc.os[si] || ''
@@ -614,47 +642,92 @@ const summaries = computed(() => {
       (sc.g[si] || []).forEach(([d, m, n], gi) => {
         td += d; tm += m; tn += n
         if (gAgg[gi]) { gAgg[gi].d += d; gAgg[gi].m += m; gAgg[gi].n += n }
+      });
+      (sc.means?.[si] || []).forEach(([s, c], gi) => {
+        if (gAgg[gi]) { gAgg[gi].sum += s; gAgg[gi].cnt += c }
       })
     }
 
     const tot = td + tm + tn
-    const donePct = tot ? Math.round(td / tot * 100) : 0
-    const midPct  = tot ? Math.round(tm / tot * 100) : 0
+    const donePct = tot ? +(td / tot * 100).toFixed(2) : 0
+    const midPct  = tot ? +(tm / tot * 100).toFixed(2) : 0
 
     const groups = gAgg.map((g, gi) => {
       const gt = g.d + g.m + g.n
-      const dp = gt ? Math.round(g.d / gt * 100) : 0
-      const mp = gt ? Math.round(g.m / gt * 100) : 0
+      const dp = gt ? +(g.d / gt * 100).toFixed(2) : 0
+      const mp = gt ? +(g.m / gt * 100).toFixed(2) : 0
+      const scale = (data.value!.groupScales?.[si]?.[gi] ?? 0) as 0 | 4 | 5
+      const mean = g.cnt > 0 ? +(g.sum / g.cnt).toFixed(2) : null
       return {
         label: data.value!.groupLabels[si][gi] || '',
-        donePct: dp, midPct: mp, nonePct: Math.max(0, 100 - dp - mp)
+        donePct: dp, midPct: mp, nonePct: +Math.max(0, 100 - dp - mp).toFixed(2),
+        scale, mean
       }
     })
 
     return {
       name, completedSchools: completed, inProgressSchools: inProgress,
       notStartedSchools: notStarted, donePct, midPct,
-      nonePct: Math.max(0, 100 - donePct - midPct), groups
+      nonePct: +Math.max(0, 100 - donePct - midPct).toFixed(2), groups
     }
   })
 })
 
 // ── Evidence panel ──
-const ev = reactive({ open: false, loading: false, sheetName: '', groupLabel: '', rows: [] as any[] })
+const ev = reactive({
+  open: false, loading: false, sheetName: '', groupLabel: '',
+  rows: [] as any[], agg: [] as AggItem[], si: 0
+})
 
 async function openEvidence(si: number, gi: number | null) {
-  ev.open = true; ev.loading = true
+  ev.open = true; ev.loading = true; ev.si = si
   ev.sheetName = data.value?.sheetNames[si] || ''
   ev.groupLabel = gi !== null ? (data.value?.groupLabels[si]?.[gi] || '') : ''
-  ev.rows = []
+  ev.rows = []; ev.agg = []
   const params: Record<string, string> = { sheet: String(si) }
   if (gi !== null) params.group = data.value?.groupKeys[si]?.[gi] || ''
   if (filter.district) params.district = filter.district
   if (filter.network) params.network = filter.network
   if (filter.school) params.schoolCode = filter.school
+  const qs = new URLSearchParams(params).toString()
   try {
-    ev.rows = await $fetch('/api/evidence?' + new URLSearchParams(params).toString())
+    const [rows, agg] = await Promise.all([
+      $fetch<any[]>('/api/evidence?' + qs),
+      $fetch<AggItem[]>('/api/evidence-agg?' + qs)
+    ])
+    ev.rows = rows; ev.agg = agg
   } finally { ev.loading = false }
+}
+
+async function exportExcel() {
+  const XLSX = await import('xlsx')
+  const now = new Date().toLocaleDateString('th-TH')
+  const fname = `${ev.sheetName}${ev.groupLabel ? '_' + ev.groupLabel : ''}_${now}.xlsx`
+  const wb = XLSX.utils.book_new()
+
+  // Sheet 1: สรุปรายข้อ
+  const isRating = ev.agg.some(a => a.scale > 0)
+  const aggHeader = isRating
+    ? ['รายข้อ', 'จำนวน', 'ค่าเฉลี่ย', 'ระดับคุณภาพ', '% ผ่านเกณฑ์']
+    : ['รายข้อ', 'จำนวน', 'ดำเนินการแล้ว/มี', '% ดำเนินการแล้ว', 'อยู่ระหว่าง', '% อยู่ระหว่าง', 'ยังไม่', '% ยังไม่']
+  const aggData = ev.agg.map(a => isRating
+    ? [a.label, a.total, a.mean ?? '', a.qualityLabel, a.donePct]
+    : [a.label, a.total, a.done, a.donePct, a.mid, a.midPct, a.none, +(100 - a.donePct - a.midPct).toFixed(2)]
+  )
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet([aggHeader, ...aggData]), 'สรุปรายข้อ')
+
+  // Sheet 2: รายโรงเรียน
+  if (ev.rows.length) {
+    const itemLabels = ev.rows[0]?.items?.map((it: any) => it.label) ?? []
+    const detailHeader = ['รหัส', 'ชื่อโรงเรียน', 'อำเภอ', 'ศูนย์เครือข่าย', ...itemLabels]
+    const detailData = ev.rows.map((r: any) => [
+      r.code, r.name, r.district, r.network,
+      ...(r.items ?? []).map((it: any) => it.displayStatus || it.status)
+    ])
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet([detailHeader, ...detailData]), 'รายโรงเรียน')
+  }
+
+  XLSX.writeFile(wb, fname)
 }
 
 function statusLabel(cat: string) {
@@ -669,6 +742,23 @@ const LEGEND_LABELS: Record<number, { done: string; mid: string; none: string }>
 }
 function legendLabel(sheetIdx: number, cat: 'done' | 'mid' | 'none') {
   return (LEGEND_LABELS[sheetIdx] ?? LEGEND_LABELS[0])[cat]
+}
+
+function qualityLabel(mean: number, scale: number): string {
+  if (scale === 5) {
+    if (mean >= 4.5) return 'ดีเยี่ยม'
+    if (mean >= 3.5) return 'ดีมาก'
+    if (mean >= 2.5) return 'ดี'
+    if (mean >= 1.5) return 'พอใช้'
+    return 'ปรับปรุง'
+  }
+  if (scale === 4) {
+    if (mean >= 3.5) return 'ดีเยี่ยม'
+    if (mean >= 2.5) return 'ดี'
+    if (mean >= 1.5) return 'พอใช้'
+    return 'ปรับปรุง'
+  }
+  return ''
 }
 
 // ── School List Modal ──

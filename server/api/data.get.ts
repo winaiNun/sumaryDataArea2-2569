@@ -1,6 +1,13 @@
 import { getSheetRows } from '../utils/sheetsStore'
 
 type Stat = [number, number, number] // [done, mid, none]
+type Mean = [number, number]         // [sum, count]
+
+function getColScale(col: string): 0 | 4 | 5 {
+  if (col.endsWith('(ระดับคะแนน 1-4)')) return 4
+  if (col.endsWith('(ระดับคุณภาพ 1-5)')) return 5
+  return 0
+}
 
 const QUALITY_SCHOOL_GROUPS = new Set(['9.1'])
 const HOME_SCHOOL_GROUPS = new Set(['9.6'])
@@ -89,26 +96,33 @@ export default defineEventHandler(async () => {
     const groupKeys = parser.getGroupKeys(allCols)
     const groupColsList = groupKeys.map(k => parser.colsForGroup(allCols, k))
 
-    const map = new Map<string, { os: string, groups: Stat[] }>()
+    const map = new Map<string, { os: string, groups: Stat[], means: Mean[] }>()
     for (const row of rows) {
       const code = String(row['DMC Code'] || '')
-      const groups: Stat[] = groupColsList.map((cols, gi) => {
+      const groups: Stat[] = []
+      const means: Mean[] = []
+      groupColsList.forEach((cols, gi) => {
         const gKey = groupKeys[gi]
         if (pi === 3) {
-          if (QUALITY_SCHOOL_GROUPS.has(gKey) && row['โรงเรียนคุณภาพ'] !== 'ใช่') return [0, 0, 0] as Stat
-          if (HOME_SCHOOL_GROUPS.has(gKey) && row['Home School'] !== 'ใช่') return [0, 0, 0] as Stat
+          if (QUALITY_SCHOOL_GROUPS.has(gKey) && row['โรงเรียนคุณภาพ'] !== 'ใช่') { groups.push([0,0,0]); means.push([0,0]); return }
+          if (HOME_SCHOOL_GROUPS.has(gKey) && row['Home School'] !== 'ใช่') { groups.push([0,0,0]); means.push([0,0]); return }
         }
-        let d = 0, m = 0, n = 0
+        let d = 0, m = 0, n = 0, sum = 0, cnt = 0
         for (const col of cols) {
-          const cat = parser.classify(String(row[col] ?? '').trim())
+          const raw = String(row[col] ?? '').trim()
+          const cat = parser.classify(raw)
           if (cat === null) continue
           if (cat === 'done') d++; else if (cat === 'mid') m++; else n++
+          const scale = getColScale(col)
+          if (scale > 0) { const nv = parseFloat(raw); if (!isNaN(nv) && nv > 0) { sum += nv; cnt++ } }
         }
-        return [d, m, n]
+        groups.push([d, m, n])
+        means.push([sum, cnt])
       })
-      map.set(code, { os: String(row['สถานะการประเมิน'] || ''), groups })
+      map.set(code, { os: String(row['สถานะการประเมิน'] || ''), groups, means })
     }
-    return { map, keys: groupKeys, labels: groupKeys.map(k => parser.groupLabel(k)) }
+    const scales = groupColsList.map(cols => cols.map(c => getColScale(c)).find(s => s > 0) ?? 0)
+    return { map, keys: groupKeys, labels: groupKeys.map(k => parser.groupLabel(k)), scales }
   })
 
   // Master school list from sheet 4 (already fetched, reuse from allRows)
@@ -122,7 +136,8 @@ export default defineEventHandler(async () => {
       district: String(row['อำเภอ'] || ''),
       network: String(row['ศูนย์เครือข่าย'] || ''),
       os: sheetMaps.map(s => s.map.get(code)?.os || ''),
-      g: sheetMaps.map(s => s.map.get(code)?.groups || [])
+      g: sheetMaps.map(s => s.map.get(code)?.groups || []),
+      means: sheetMaps.map(s => s.map.get(code)?.means || [])
     }
   })
 
@@ -133,6 +148,7 @@ export default defineEventHandler(async () => {
     sheetNames: PARSERS.map(p => p.name),
     groupLabels: sheetMaps.map(s => s.labels),
     groupKeys: sheetMaps.map(s => s.keys),
+    groupScales: sheetMaps.map(s => s.scales),
     districts,
     networks,
     schools
