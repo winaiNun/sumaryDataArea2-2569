@@ -1,6 +1,48 @@
 <template>
+  <!-- ── LOADING SCREEN ── -->
+  <div v-if="pending && !data" class="loading-screen">
+    <header class="topbar loading-topbar">
+      <div class="topbar-left">
+        <div class="topbar-icon">📊</div>
+        <div>
+          <h1>Dashboard สรุปผลการนิเทศ ติดตาม การเปิดภาคเรียนที่ 1 ปีการศึกษา 2569</h1>
+          <p class="topbar-sub">สำนักงานเขตพื้นที่การศึกษาประถมศึกษานครราชสีมา เขต 2</p>
+        </div>
+      </div>
+    </header>
+
+    <div class="loading-status">
+      <span class="loading-ring"></span>
+      <div class="loading-text">
+        <strong>กำลังโหลดข้อมูลจาก Google Sheets<span class="loading-dots"><i></i><i></i><i></i></span></strong>
+        <p>ระบบกำลังดึงข้อมูลโรงเรียนทั้งเขต อาจใช้เวลาสักครู่…</p>
+      </div>
+    </div>
+
+    <!-- Skeleton: overview strip -->
+    <div class="overview-strip">
+      <div v-for="n in 4" :key="n" class="sk-card sk-ov">
+        <div class="sk-line sk-ov-pct"></div>
+        <div class="sk-line sk-ov-bar"></div>
+      </div>
+    </div>
+
+    <!-- Skeleton: criteria grid -->
+    <div class="criteria-grid">
+      <div v-for="n in 4" :key="n" class="sk-card sk-crit">
+        <div class="sk-line sk-title"></div>
+        <div class="sk-body">
+          <div class="sk-donut"></div>
+          <div class="sk-bars">
+            <div v-for="b in 4" :key="b" class="sk-line"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- ── ERROR SCREEN ── -->
-  <div v-if="!data" class="upload-screen">
+  <div v-else-if="!data" class="upload-screen">
     <div class="upload-card">
       <div class="upload-icon">⚠️</div>
       <h1 class="upload-title">ไม่สามารถโหลดข้อมูลได้</h1>
@@ -608,8 +650,10 @@ type DetailRes = {
   sheets: DetailSheet[]
 }
 
-const { data, refresh } = await useAsyncData('schools-data', () =>
-  $fetch<DataRes>('/api/data').catch(() => null)
+// ดึงข้อมูลฝั่ง client (lazy) — ส่งโครงหน้าออกทันที ไม่รอ Google Sheets ที่ SSR
+const { data, pending, refresh } = useAsyncData<DataRes | null>('schools-data',
+  () => $fetch<DataRes>('/api/data'),
+  { server: false, lazy: true, default: () => null }
 )
 
 // ── Refresh ──
