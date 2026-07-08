@@ -200,6 +200,88 @@
       </div><!-- /crit-card -->
     </div>
 
+    <!-- ── INFO SECTION: นักเรียน / บุคลากร ── -->
+    <section class="info-section">
+      <div class="info-head">
+        <div>
+          <h2 class="info-title">📊 สารสนเทศจำนวนนักเรียนและบุคลากร</h2>
+          <p class="info-sub">ตามขอบเขตที่เลือกด้านบน · {{ infoTotals.count }} โรงเรียน</p>
+        </div>
+        <button class="btn-export" @click="exportInfoExcel" title="ส่งออก Excel">📊 Excel</button>
+      </div>
+
+      <!-- KPI strip -->
+      <div class="info-kpis">
+        <div class="kpi kpi-stu"><span class="kpi-val">{{ fmt(infoTotals.tot) }}</span><span class="kpi-label">นักเรียนรวม</span></div>
+        <div class="kpi kpi-staff"><span class="kpi-val">{{ fmt(infoTotals.staff) }}</span><span class="kpi-label">บุคลากร</span></div>
+        <div class="kpi kpi-ratio"><span class="kpi-val">{{ infoTotals.ratio ?? '–' }}</span><span class="kpi-label">นักเรียน : ครู</span></div>
+        <div class="kpi kpi-pre"><span class="kpi-val">{{ fmt(infoTotals.pre) }}</span><span class="kpi-label">ปฐมวัย</span></div>
+        <div class="kpi kpi-pri"><span class="kpi-val">{{ fmt(infoTotals.pri) }}</span><span class="kpi-label">ประถมศึกษา</span></div>
+        <div class="kpi kpi-sec"><span class="kpi-val">{{ fmt(infoTotals.sec) }}</span><span class="kpi-label">มัธยมต้น</span></div>
+      </div>
+
+      <!-- Table -->
+      <div class="info-table-wrap">
+        <table class="info-table">
+          <thead>
+            <tr>
+              <th class="ith-idx">#</th>
+              <th class="txt sortable" :class="thCls('name')" @click="infoSortBy('name')">โรงเรียน</th>
+              <th class="txt sortable" :class="thCls('district')" @click="infoSortBy('district')">อำเภอ</th>
+              <th class="num sortable" :class="thCls('kPre')" @click="infoSortBy('kPre')">ปฐมวัย</th>
+              <th class="num sortable" :class="thCls('kPrimary')" @click="infoSortBy('kPrimary')">ประถม</th>
+              <th class="num sortable" :class="thCls('kLowerSec')" @click="infoSortBy('kLowerSec')">ม.ต้น</th>
+              <th class="num sortable th-strong" :class="thCls('kTotal')" @click="infoSortBy('kTotal')">รวม นร.</th>
+              <th class="num sortable" :class="thCls('staff')" @click="infoSortBy('staff')">บุคลากร</th>
+              <th class="num sortable" :class="thCls('ratio')" @click="infoSortBy('ratio')">นร:ครู</th>
+              <th class="txt">ผู้บริหาร</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-for="(r, idx) in infoRows" :key="r.code">
+              <td class="ith-idx">{{ idx + 1 }}</td>
+              <td class="txt info-name">
+                <span class="info-sch-name">{{ r.name }}</span>
+                <span v-if="r.network" class="info-net">{{ r.network }}</span>
+              </td>
+              <td class="txt">{{ r.district }}</td>
+              <td class="num">{{ fmt(r.kPre) }}</td>
+              <td class="num">{{ fmt(r.kPrimary) }}</td>
+              <td class="num">{{ fmt(r.kLowerSec) }}</td>
+              <td class="num td-strong">{{ fmt(r.kTotal) }}</td>
+              <td class="num">{{ fmt(r.staff) }}</td>
+              <td class="num">
+                <span v-if="r.ratio != null" class="ratio-badge" :class="ratioCls(r.ratio)">{{ r.ratio }}</span>
+                <span v-else class="info-dash">–</span>
+              </td>
+              <td class="txt info-dir">
+                <span class="info-dir-name">{{ r.director || '–' }}</span>
+                <span v-if="r.directorType || r.directorPhone" class="info-dir-meta">
+                  <span v-if="r.directorType" class="info-dir-type">{{ r.directorType }}</span>
+                  <span v-if="r.directorPhone" class="info-dir-phone">📞 {{ r.directorPhone }}</span>
+                </span>
+              </td>
+            </tr>
+            <tr v-if="!infoRows.length"><td colspan="10" class="info-empty">ไม่พบข้อมูลในขอบเขตที่เลือก</td></tr>
+          </tbody>
+          <tfoot v-if="infoRows.length">
+            <tr class="info-total-row">
+              <td></td>
+              <td class="txt td-strong">รวม {{ infoTotals.count }} โรงเรียน</td>
+              <td></td>
+              <td class="num td-strong">{{ fmt(infoTotals.pre) }}</td>
+              <td class="num td-strong">{{ fmt(infoTotals.pri) }}</td>
+              <td class="num td-strong">{{ fmt(infoTotals.sec) }}</td>
+              <td class="num td-strong">{{ fmt(infoTotals.tot) }}</td>
+              <td class="num td-strong">{{ fmt(infoTotals.staff) }}</td>
+              <td class="num td-strong">{{ infoTotals.ratio ?? '–' }}</td>
+              <td></td>
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+    </section>
+
     <!-- ── FOOTER ── -->
     <footer class="site-footer">
       <p class="footer-dept">กลุ่มนิเทศ ติดตามและประเมินผลการจัดการศึกษา</p>
@@ -493,7 +575,12 @@
 type Stat = [number, number, number]
 type Mean = [number, number]  // [sum, count]
 type AggItem = { label: string; col: string; scale: number; total: number; done: number; mid: number; none: number; donePct: number; midPct: number; mean: number | null; qualityLabel: string }
-type School = { code: string; name: string; district: string; network: string; os: string[]; g: Stat[][]; means: Mean[][] }
+type SchoolInfo = {
+  kPre: number | null; kPrimary: number | null; kLowerSec: number | null
+  kTotal: number | null; staff: number | null
+  director: string; directorType: string; directorPhone: string
+}
+type School = { code: string; name: string; district: string; network: string; os: string[]; g: Stat[][]; means: Mean[][]; info: SchoolInfo }
 type DataRes = {
   sheetNames: string[]
   groupLabels: string[][]
@@ -895,6 +982,86 @@ async function saveEdit() {
   } finally {
     em.saving = false
   }
+}
+
+// ── Info section (นักเรียน / บุคลากร) ──
+type InfoRow = {
+  code: string; name: string; district: string; network: string
+  kPre: number | null; kPrimary: number | null; kLowerSec: number | null
+  kTotal: number | null; staff: number | null; ratio: number | null
+  director: string; directorType: string; directorPhone: string
+}
+type InfoSortKey = 'name' | 'district' | 'kPre' | 'kPrimary' | 'kLowerSec' | 'kTotal' | 'staff' | 'ratio'
+const infoSort = reactive<{ key: InfoSortKey; dir: 'asc' | 'desc' }>({ key: 'kTotal', dir: 'desc' })
+const TEXT_KEYS = new Set<InfoSortKey>(['name', 'district'])
+
+const fmt = (n: number | null) => (n == null ? '–' : n.toLocaleString('th-TH'))
+
+const infoRows = computed<InfoRow[]>(() => {
+  const rows: InfoRow[] = filteredSchools.value.map(sc => {
+    const i = sc.info || ({} as SchoolInfo)
+    const ratio = i.kTotal != null && i.staff ? +(i.kTotal / i.staff).toFixed(1) : null
+    return {
+      code: sc.code, name: sc.name, district: sc.district, network: sc.network,
+      kPre: i.kPre, kPrimary: i.kPrimary, kLowerSec: i.kLowerSec,
+      kTotal: i.kTotal, staff: i.staff, ratio,
+      director: i.director, directorType: i.directorType, directorPhone: i.directorPhone
+    }
+  })
+  const { key, dir } = infoSort
+  const mul = dir === 'asc' ? 1 : -1
+  rows.sort((a, b) => {
+    if (TEXT_KEYS.has(key)) {
+      return String(a[key] || '').localeCompare(String(b[key] || ''), 'th') * mul
+    }
+    const av = a[key] as number | null, bv = b[key] as number | null
+    if (av == null && bv == null) return 0
+    if (av == null) return 1   // blanks always last
+    if (bv == null) return -1
+    return (av - bv) * mul
+  })
+  return rows
+})
+
+const infoTotals = computed(() => {
+  let pre = 0, pri = 0, sec = 0, tot = 0, staff = 0
+  for (const r of infoRows.value) {
+    pre += r.kPre || 0; pri += r.kPrimary || 0; sec += r.kLowerSec || 0
+    tot += r.kTotal || 0; staff += r.staff || 0
+  }
+  return { count: infoRows.value.length, pre, pri, sec, tot, staff, ratio: staff ? +(tot / staff).toFixed(1) : null }
+})
+
+function infoSortBy(key: InfoSortKey) {
+  if (infoSort.key === key) infoSort.dir = infoSort.dir === 'asc' ? 'desc' : 'asc'
+  else { infoSort.key = key; infoSort.dir = TEXT_KEYS.has(key) ? 'asc' : 'desc' }
+}
+function thCls(key: InfoSortKey) {
+  return infoSort.key === key ? (infoSort.dir === 'asc' ? 'sorted-asc' : 'sorted-desc') : ''
+}
+function ratioCls(r: number) {
+  return r <= 15 ? 'rb-good' : r <= 20 ? 'rb-mid' : 'rb-high'
+}
+
+async function exportInfoExcel() {
+  const XLSX = await import('xlsx')
+  const today = new Date().toLocaleDateString('th-TH')
+  const scope = isAll.value
+    ? 'ทุกโรงเรียน'
+    : (filter.school
+        ? (availableSchools.value.find(s => s.code === filter.school)?.name || filter.school)
+        : [filter.district, filter.network].filter(Boolean).join('-')) || 'กรอง'
+  const header = ['รหัส', 'โรงเรียน', 'อำเภอ', 'ศูนย์เครือข่าย', 'ปฐมวัย', 'ประถม', 'ม.ต้น', 'รวมนักเรียน', 'บุคลากร', 'นร:ครู', 'ผู้บริหาร', 'ตำแหน่ง', 'เบอร์โทร']
+  const body = infoRows.value.map(r => [
+    r.code, r.name, r.district, r.network,
+    r.kPre ?? '', r.kPrimary ?? '', r.kLowerSec ?? '', r.kTotal ?? '', r.staff ?? '', r.ratio ?? '',
+    r.director, r.directorType, r.directorPhone
+  ])
+  const t = infoTotals.value
+  const totalRow = ['', `รวม ${t.count} โรงเรียน`, '', '', t.pre, t.pri, t.sec, t.tot, t.staff, t.ratio ?? '', '', '', '']
+  const wb = XLSX.utils.book_new()
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet([header, ...body, totalRow]), 'สารสนเทศ')
+  XLSX.writeFile(wb, `สารสนเทศนักเรียนบุคลากร_${scope}_${today}.xlsx`)
 }
 
 // ── Print ──

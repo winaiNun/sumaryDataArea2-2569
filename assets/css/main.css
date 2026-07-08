@@ -446,9 +446,94 @@ td input {
 }
 td input:focus { outline: 2px solid var(--a0); outline-offset: 1px; }
 
+/* ════════════════════════════════
+   INFO SECTION — นักเรียน / บุคลากร
+   ════════════════════════════════ */
+.info-section {
+  background: var(--card); border: 1px solid var(--bdr);
+  border-radius: 18px; box-shadow: var(--sh);
+  padding: 20px 22px 22px;
+}
+.info-head {
+  display: flex; justify-content: space-between; align-items: flex-start;
+  gap: 12px; margin-bottom: 16px;
+}
+.info-title { font-size: 1.1rem; font-weight: 800; }
+.info-sub { font-size: .85rem; color: var(--sub); margin-top: 3px; }
+
+/* KPI strip */
+.info-kpis {
+  display: grid; grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 10px; margin-bottom: 18px;
+}
+.kpi {
+  border: 1px solid var(--bdr); border-radius: 12px;
+  padding: 12px 14px; display: flex; flex-direction: column; gap: 3px;
+  position: relative; overflow: hidden; background: #fbfdff;
+}
+.kpi::before {
+  content: ''; position: absolute; top: 0; left: 0; bottom: 0; width: 4px;
+}
+.kpi-val { font-size: 1.5rem; font-weight: 800; line-height: 1.1; }
+.kpi-label { font-size: .78rem; color: var(--sub); font-weight: 600; }
+.kpi-stu::before   { background: var(--a0); }
+.kpi-stu   .kpi-val { color: var(--a0); }
+.kpi-staff::before { background: var(--a2); }
+.kpi-staff .kpi-val { color: var(--a2); }
+.kpi-ratio::before { background: var(--a1); }
+.kpi-ratio .kpi-val { color: var(--a1); }
+.kpi-pre::before   { background: #ec4899; }
+.kpi-pri::before   { background: #0891b2; }
+.kpi-sec::before   { background: var(--a3); }
+
+/* Table */
+.info-table-wrap { overflow-x: auto; border: 1px solid var(--bdr); border-radius: 12px; }
+.info-table { width: 100%; border-collapse: collapse; font-size: .86rem; min-width: 760px; }
+.info-table thead th {
+  position: sticky; top: 0; z-index: 1;
+  background: #f1f5f9; color: var(--text); font-weight: 700;
+  padding: 10px 12px; text-align: left; white-space: nowrap;
+  border-bottom: 2px solid var(--bdr);
+}
+.info-table th.num, .info-table td.num { text-align: right; font-variant-numeric: tabular-nums; }
+.info-table th.sortable { cursor: pointer; user-select: none; }
+.info-table th.sortable:hover { background: #e2e8f0; }
+.info-table th.sortable::after { content: ' ⇅'; opacity: .3; font-size: .8em; }
+.info-table th.sorted-asc::after  { content: ' ▲'; opacity: 1; }
+.info-table th.sorted-desc::after { content: ' ▼'; opacity: 1; }
+.info-table th.th-strong { color: var(--a0); }
+.info-table tbody td { padding: 9px 12px; border-bottom: 1px solid #eef2f6; vertical-align: middle; }
+.info-table tbody tr:nth-child(even) { background: #fafcfe; }
+.info-table tbody tr:hover { background: #eef6ff; }
+.ith-idx { width: 34px; text-align: center; color: var(--sub); font-size: .8rem; }
+.td-strong, .th-strong { font-weight: 800; }
+.info-table td.td-strong.num { color: var(--a0); }
+.info-name { min-width: 190px; }
+.info-sch-name { font-weight: 600; display: block; }
+.info-net { font-size: .74rem; color: var(--sub); }
+.info-dash { color: var(--none-clr); }
+
+.ratio-badge {
+  display: inline-block; min-width: 40px; text-align: center;
+  padding: 2px 8px; border-radius: 999px; font-weight: 700; font-size: .8rem;
+}
+.rb-good { background: #dcfce7; color: #15803d; }
+.rb-mid  { background: #fef3c7; color: #b45309; }
+.rb-high { background: #fee2e2; color: #b91c1c; }
+
+.info-dir { min-width: 170px; }
+.info-dir-name { font-weight: 600; }
+.info-dir-meta { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 2px; }
+.info-dir-type { font-size: .74rem; color: var(--sub); }
+.info-dir-phone { font-size: .74rem; color: var(--a2); white-space: nowrap; }
+
+.info-total-row td { background: #f8fafc; border-top: 2px solid var(--bdr); padding: 11px 12px; }
+.info-empty { text-align: center; color: var(--sub); padding: 24px !important; }
+
 /* ── Responsive ── */
 @media (max-width: 1100px) {
   .crit-body { grid-template-columns: 190px 1fr; }
+  .info-kpis { grid-template-columns: repeat(3, 1fr); }
 }
 @media (max-width: 900px) {
   .criteria-grid { grid-template-columns: 1fr; }
@@ -459,6 +544,8 @@ td input:focus { outline: 2px solid var(--a0); outline-offset: 1px; }
   .donut-section { border-right: none; border-bottom: 1px solid var(--bdr); }
   .overview-strip { grid-template-columns: 1fr 1fr; }
   .topbar { flex-direction: column; align-items: flex-start; }
+  .info-kpis { grid-template-columns: repeat(2, 1fr); }
+  .info-section { padding: 16px 14px; }
 }
 
 /* ════════════════════════════════

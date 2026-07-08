@@ -9,6 +9,12 @@ function getColScale(col: string): 0 | 4 | 5 {
   return 0
 }
 
+function numOrNull(v: any): number | null {
+  if (v === '' || v === null || v === undefined) return null
+  const n = Number(v)
+  return isNaN(n) ? null : n
+}
+
 const QUALITY_SCHOOL_GROUPS = new Set(['9.1'])
 const HOME_SCHOOL_GROUPS = new Set(['9.6'])
 
@@ -125,6 +131,28 @@ export default defineEventHandler(async () => {
     return { map, keys: groupKeys, labels: groupKeys.map(k => parser.groupLabel(k)), scales }
   })
 
+  // ── สารสนเทศจำนวนนักเรียน/บุคลากร (Sheet 3) + ผู้บริหาร (Sheet 1) ──
+  const infoMap = new Map<string, any>()
+  for (const row of allRows[2]) {
+    const code = String(row['DMC Code'] || '')
+    infoMap.set(code, {
+      kPre: numOrNull(row['นักเรียนระดับปฐมวัย (คน)']),
+      kPrimary: numOrNull(row['นักเรียนระดับประถมศึกษา (คน)']),
+      kLowerSec: numOrNull(row['นักเรียนระดับมัธยมศึกษาตอนต้น (คน)']),
+      kTotal: numOrNull(row['จำนวนนักเรียนรวมทั้งหมด (คน)']),
+      staff: numOrNull(row['จำนวนบุคลากร (คน)'])
+    })
+  }
+  const dirMap = new Map<string, any>()
+  for (const row of allRows[0]) {
+    const code = String(row['DMC Code'] || '')
+    dirMap.set(code, {
+      director: String(row['ชื่อผู้บริหาร'] || ''),
+      directorType: String(row['ประเภทผู้บริหาร'] || ''),
+      directorPhone: String(row['เบอร์โทรผู้บริหาร'] || '')
+    })
+  }
+
   // Master school list from sheet 4 (already fetched, reuse from allRows)
   const masterRows = allRows[3]
 
@@ -137,7 +165,12 @@ export default defineEventHandler(async () => {
       network: String(row['ศูนย์เครือข่าย'] || ''),
       os: sheetMaps.map(s => s.map.get(code)?.os || ''),
       g: sheetMaps.map(s => s.map.get(code)?.groups || []),
-      means: sheetMaps.map(s => s.map.get(code)?.means || [])
+      means: sheetMaps.map(s => s.map.get(code)?.means || []),
+      info: {
+        kPre: null, kPrimary: null, kLowerSec: null, kTotal: null, staff: null,
+        director: '', directorType: '', directorPhone: '',
+        ...infoMap.get(code), ...dirMap.get(code)
+      }
     }
   })
 
